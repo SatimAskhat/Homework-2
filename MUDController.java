@@ -2,90 +2,116 @@ package com.example.mud.controller;
 
 import java.util.Scanner;
 import com.example.mud.player.Player;
+import com.example.mud.room.Room;
+import com.example.mud.item.Item;
 
-/**
- * MUDController (Skeleton):
- * A simple controller that reads player input and orchestrates
- * basic commands like look around, move, pick up items,
- * check inventory, show help, etc.
- */
 public class MUDController {
 
     private final Player player;
     private boolean running;
+    private final Scanner scanner;
 
-    /**
-     * Constructs the controller with a reference to the current player.
-     */
     public MUDController(Player player) {
-        // Initialize fields here (if needed)
+        this.player = player;
+        this.running = true;
+        this.scanner = new Scanner(System.in);
     }
 
-    /**
-     * Main loop method that repeatedly reads input from the user
-     * and dispatches commands until the game ends.
-     */
     public void runGameLoop() {
-        // TODO: Implement a loop that:
-        // 1) Prints a prompt (e.g., "> ")
-        // 2) Reads user input
-        // 3) Calls handleInput(input)
-        // 4) Terminates when 'running' is set to false
+        System.out.println("Welcome to the MUD game! Type 'help' for commands.");
+        
+        while (running) {
+            System.out.print("> ");
+            String input = scanner.nextLine().trim().toLowerCase();
+            handleInput(input);
+        }
     }
 
-    /**
-     * Handle a single command input (e.g. 'look', 'move forward', 'pick up sword').
-     */
     public void handleInput(String input) {
-        // TODO:
-        // 1) Parse the input into a command and optionally an argument
-        // 2) Use a switch/case (or if/else) to call the correct method below
-        //    based on the command word
+        String[] parts = input.split(" ", 2);
+        String command = parts[0];
+        String argument = parts.length > 1 ? parts[1] : "";
+
+        switch (command) {
+            case "look":
+                lookAround();
+                break;
+            case "move":
+                move(argument);
+                break;
+            case "pickup":
+                pickUp(argument);
+                break;
+            case "inventory":
+                checkInventory();
+                break;
+            case "help":
+                showHelp();
+                break;
+            case "quit":
+                running = false;
+                System.out.println("Thanks for playing!");
+                break;
+            default:
+                System.out.println("Unknown command. Type 'help' for a list of commands.");
+                break;
+        }
     }
 
-    /**
-     * Look around the current room: describe it and show items/NPCs.
-     */
     private void lookAround() {
-        // TODO: Print information about the player's current room
+        Room currentRoom = player.getCurrentRoom();
+        System.out.println("You are in " + currentRoom.getDescription());
+        System.out.println("Exits: " + currentRoom.getExits());
+        System.out.println("Items: " + currentRoom.getItems());
     }
 
-    /**
-     * Move the player in a given direction (forward, back, left, right).
-     */
     private void move(String direction) {
-        // TODO: Attempt to move to the next room in the given direction
-        //       If there's no room in that direction, print an error message
-        //       If successfully moved, describe the new room
+        if (direction.isEmpty()) {
+            System.out.println("Move where? Usage: move <direction>");
+            return;
+        }
+        
+        Room nextRoom = player.getCurrentRoom().getExit(direction);
+        if (nextRoom != null) {
+            player.setCurrentRoom(nextRoom);
+            lookAround();
+        } else {
+            System.out.println("You can't go that way!");
+        }
     }
 
-    /**
-     * Pick up an item (e.g. "pick up sword").
-     */
-    private void pickUp(String arg) {
-        // TODO:
-        // 1) Parse out the item name if 'arg' starts with "up "
-        // 2) Check if that item exists in the current room
-        // 3) Remove from room, add to player's inventory
+    private void pickUp(String itemName) {
+        if (itemName.isEmpty()) {
+            System.out.println("Pick up what? Usage: pickup <item>");
+            return;
+        }
+        
+        Room currentRoom = player.getCurrentRoom();
+        Item item = currentRoom.getItem(itemName);
+        if (item != null) {
+            player.addItem(item);
+            currentRoom.removeItem(item);
+            System.out.println("You picked up " + item.getName());
+        } else {
+            System.out.println("There is no " + itemName + " here.");
+        }
     }
 
-    /**
-     * Check the player's inventory.
-     */
     private void checkInventory() {
-        // TODO: List the items in the player's inventory
-        //       If no items, indicate that the inventory is empty
+        if (player.getInventory().isEmpty()) {
+            System.out.println("Your inventory is empty.");
+        } else {
+            System.out.println("You are carrying: " + player.getInventory());
+        }
     }
 
-    /**
-     * Show help commands
-     */
     private void showHelp() {
-        // TODO: Print a list of available commands and brief instructions
+        System.out.println("Available commands:");
+        System.out.println("  look - Describe the current room");
+        System.out.println("  move <direction> - Move in a direction (e.g., north, south)");
+        System.out.println("  pickup <item> - Pick up an item");
+        System.out.println("  inventory - Show your inventory");
+        System.out.println("  help - Show this help menu");
+        System.out.println("  quit - Exit the game");
     }
-
-    /**
-     * (Optional) Add any other methods (e.g., attack, open door, talk, etc.)
-     * if you want to extend the game logic further.
-     */
 }
